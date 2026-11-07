@@ -1,0 +1,9 @@
+{
+  "framework": null,
+  "outputDirectory": "public",
+  "functions": {
+    "api/*.js": {
+      "includeFiles": "{criteria.json,data/practice.json,data/answer.json}"
+    }
+  }
+}

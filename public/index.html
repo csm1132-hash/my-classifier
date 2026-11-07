@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>요청 문장 분류기</title>
+  <meta name="description" content="사내 요청 문장을 칸 · 긴급도 · 감정으로 분류해 보는 연습용 분류기">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f5bd3'/%3E%3Cpath d='M9 11h14M9 16h9M9 21h11' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <h1>요청 문장 분류기</h1>
+      <p class="lede">사내 요청 문장을 <b>칸</b> · <b>긴급도</b> · <b>감정</b>으로 나눠 봅니다. 규칙 분류기와 Gemini의 판단을 나란히 비교해 보세요.</p>
+    </header>
+
+    <section class="panel" aria-labelledby="input-title">
+      <h2 id="input-title">문장 입력</h2>
+      <form id="form">
+        <textarea id="input" rows="3" maxlength="300" placeholder="예) 평가 보드 언제 와? 다음주 월요일부터 평가 시작인데" required></textarea>
+        <div class="form-row">
+          <label class="model">
+            <span>Gemini 모델</span>
+            <select id="model"></select>
+          </label>
+          <span id="count" class="muted">0 / 300</span>
+          <button id="run" type="submit" class="primary">분류하기</button>
+        </div>
+        <p id="mask-preview" class="mask-preview" hidden></p>
+        <p class="notice">입력한 문장은 저장하지 않아요. 이름 · 전화번호 · 사번은 브라우저에서 가린 뒤 서버와 Google(Gemini)로 보냅니다. 호칭 없이 쓴 이름은 못 가릴 수 있으니 직접 지워 주세요. <kbd>Ctrl</kbd>+<kbd>Enter</kbd>로도 분류할 수 있어요.</p>
+      </form>
+    </section>
+
+    <section id="result" class="panel" hidden aria-labelledby="result-title">
+      <h2 id="result-title">분류 결과</h2>
+      <p class="quote"><span class="muted small">보낸 문장</span><br><span id="result-sentence"></span></p>
+      <div class="cards">
+        <article class="card" id="card-rule">
+          <h3>규칙 <span class="muted">명세 단서 + 연습 문장 낱말</span></h3>
+          <div class="card-body"></div>
+        </article>
+        <article class="card" id="card-gemini">
+          <h3>Gemini <span class="muted" id="gemini-model-name"></span></h3>
+          <div class="card-body"></div>
+        </article>
+      </div>
+
+      <article class="card mine">
+        <h3>내 판단 <span class="muted">결과가 틀렸으면 고쳐 보세요</span></h3>
+        <div class="fix-grid">
+          <label><span>칸</span><select id="fix-칸"></select></label>
+          <label><span>다른칸후보</span><select id="fix-다른칸후보"></select></label>
+          <label><span>긴급도</span><select id="fix-긴급도"></select></label>
+          <label><span>감정</span><select id="fix-감정"></select></label>
+        </div>
+        <div class="fix-actions">
+          <button type="button" class="ghost" data-fill="rule">규칙 결과로 채우기</button>
+          <button type="button" class="ghost" data-fill="gemini">Gemini 결과로 채우기</button>
+        </div>
+        <p id="fix-diff" class="diff"></p>
+        <p class="muted small">고친 값은 아직 저장되지 않아요. 새로고침하면 사라집니다.</p>
+      </article>
+    </section>
+
+    <section class="panel" aria-labelledby="exam-title">
+      <h2 id="exam-title">정답 30문장으로 본 정확도 <span class="tag">참고용</span></h2>
+      <p class="muted">사람이 정답을 붙인 30문장(시험지)을 두 분류기에게 풀게 한 점수입니다. 이 문장들은 Gemini 예시에 넣지 않았어요.</p>
+      <div class="table-scroll">
+        <table class="score" id="score">
+          <thead><tr><th></th><th>칸</th><th>긴급도</th><th>감정</th><th>세 항목 모두</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="exam-actions">
+        <button id="exam-run" type="button" class="primary">Gemini로 30문장 채점하기</button>
+        <span id="exam-status" class="muted"></span>
+      </div>
+      <div class="table-scroll">
+        <table class="exam" id="exam">
+          <thead><tr><th>번호</th><th>문장</th><th>정답</th><th>규칙</th><th>Gemini</th></tr></thead>
+          <tbody><tr><td colspan="5" class="muted">불러오는 중…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="foot muted small">기준: 데이터명세.md · 긴급도는 높음·낮음에 해당하지 않으면 보통</footer>
+  </main>
+  <script src="mask.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
