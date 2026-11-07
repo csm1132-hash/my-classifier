@@ -1,9 +1,10 @@
 // POST /api/classify  { sentences: string[], model?: string, useGemini?: boolean }
-//   → { rule: 결과[], gemini: 결과[] | null, geminiError: string | null, model }
+//   → { rule: 결과[], gemini: 결과[] | null, geminiError: string | null, model, attempts }
+//   Gemini가 실패하거나 답을 못 받은 문장이 있으면 다른 모델로 최대 2번 바꿔 다시 시도한다 (attempts에 기록).
 // GET  /api/classify  → 고를 수 있는 모델 목록
 // 입력 문장은 저장하지 않는다.
 import { classifyRules } from '../lib/rules.js';
-import { classifyGemini, MODELS, DEFAULT_MODEL } from '../lib/gemini.js';
+import { classifyGeminiWithFallback, MODELS, DEFAULT_MODEL } from '../lib/gemini.js';
 import { allowGeminiCall } from '../lib/ratelimit.js';
 import { MAX_SENTENCES, MAX_LENGTH } from '../lib/labels.js';
 
@@ -40,6 +41,7 @@ export async function POST(request) {
 
   let gemini = null;
   let geminiError = null;
+  let attempts = [];
   if (body.useGemini !== false) {
     const apiKey = process.env.GEMINI_API_KEY;
     const ip = (request.headers.get('x-forwarded-for') || 'local').split(',')[0].trim();
@@ -48,13 +50,15 @@ export async function POST(request) {
     } else if (!allowGeminiCall(ip)) {
       geminiError = '짧은 시간에 요청이 너무 많습니다. 10분쯤 뒤에 다시 시도해 주세요';
     } else {
-      try {
-        gemini = await classifyGemini(sentences, model, apiKey);
-      } catch (e) {
-        geminiError = e.message;
+      const out = await classifyGeminiWithFallback(sentences, model, apiKey);
+      attempts = out.attempts;
+      if (out.results.some(Boolean)) gemini = out.results;
+      if (out.results.some((r) => !r)) {
+        geminiError = `모델 ${attempts.length}개를 시도했지만 답을 받지 못했습니다: ` +
+          attempts.map((a) => `${a.model} (${a.error})`).join(' → ');
       }
     }
   }
 
-  return Response.json({ rule, gemini, geminiError, model });
+  return Response.json({ rule, gemini, geminiError, model, attempts });
 }

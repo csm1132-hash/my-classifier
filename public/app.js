@@ -40,6 +40,16 @@ function updateMaskPreview(text) {
   if (summary) box.replaceChildren(h('b', {}, `보내기 전에 가림: ${summary}`), h('br'), masked);
 }
 
+/* ---------- 모델 자동 전환 안내 ---------- */
+
+// 첫 모델이 실패해 다른 모델로 바꿔 시도했을 때만 안내 문구를 만든다.
+function attemptNote(attempts) {
+  if (!attempts || attempts.length < 2) return '';
+  const failed = attempts.filter((a) => !a.ok).map((a) => `${a.model}(${a.error})`);
+  const last = attempts[attempts.length - 1];
+  return `자동 전환: ${failed.join(' → ')}${last.ok ? ` → ${last.model}로 받음` : ''}`;
+}
+
 /* ---------- 문장 하나 분류 ---------- */
 
 const state = { rule: null, gemini: null };
@@ -116,9 +126,11 @@ async function classify(text) {
     state.rule = data.rule[0];
     state.gemini = data.gemini ? data.gemini[0] : null;
     $('#result-sentence').textContent = text;
-    $('#gemini-model-name').textContent = data.model;
+    $('#gemini-model-name').textContent = state.gemini?.model || data.model;
     renderCard('card-rule', state.rule);
     renderCard('card-gemini', state.gemini, data.geminiError || 'Gemini가 이 문장에 답하지 않았습니다');
+    const note = attemptNote(data.attempts);
+    if (note && state.gemini) $('#card-gemini .card-body').append(h('p', { class: 'fallback' }, note));
     setFix(state.gemini || state.rule);
     $('#result').hidden = false;
     $('#result').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -193,7 +205,9 @@ async function runExam() {
     exam.gemini = data.gemini;
     renderExam();
     const missing = data.gemini.filter((g) => !g).length;
-    status.textContent = `${data.model}로 채점했어요.${missing ? ` ${missing}문장은 답이 없어 틀린 것으로 셌어요.` : ''}`;
+    const used = [...new Set(data.gemini.filter(Boolean).map((g) => g.model))].join(', ');
+    const note = attemptNote(data.attempts);
+    status.textContent = `${used}로 채점했어요.${missing ? ` ${missing}문장은 답이 없어 틀린 것으로 셌어요.` : ''}${note ? ` (${note})` : ''}`;
   } catch (e) {
     status.textContent = e.message;
   } finally {

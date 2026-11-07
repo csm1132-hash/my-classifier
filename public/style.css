@@ -140,6 +140,7 @@ kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); bord
 .labels dd { margin: 0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .reason { margin: 12px 0 0; font-size: 14px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
 .error { color: var(--bad); margin: 0; font-size: 14px; }
+.fallback { margin: 8px 0 0; font-size: 13px; color: var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 6px 10px; }
 
 .chip { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 13px; font-weight: 600; background: var(--neutral-bg); color: var(--text); white-space: nowrap; }
 .chip.cat { background: var(--surface-2); border: 1px solid var(--line); }
